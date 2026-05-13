@@ -7,12 +7,27 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Dict
 from collections import defaultdict
+import os
 
 # =========================================================
 # INITIALISATION API
 # =========================================================
 
 app = FastAPI()
+
+# =========================================================
+# USER MODEL (FIX 1)
+# =========================================================
+
+class UserQuiz(BaseModel):
+    firstname: str
+    mainGoal: str
+    mood: List[str]
+    sleepQuality: str
+    energyLevel: str
+    digestionQuality: str
+    weeklySport: int
+    mentalLoad: str
 
 # =========================================================
 # CONFIGURATION DES SCORES PAR QUESTION
@@ -28,8 +43,7 @@ QUESTION_SCORES = {
 }
 
 # =========================================================
-# TABLES DE RÈGLES (avec pondération intelligente)
-# format: (besoin_principal, [ (besoin_secondaire, poids) ])
+# TABLES DE RÈGLES
 # =========================================================
 
 MOOD_RULES = {
@@ -42,57 +56,25 @@ MOOD_RULES = {
 
 SLEEP_RULES = {
     "Très bien": ("equilibre", []),
-
-    "Plutôt bien": (
-        "serenite",
-        [("equilibre", 0.3)]
-    ),
-
-    "Je me réveille fatigué(e)": (
-        "recuperation",
-        [("ancrage", 0.4), ("serenite", 0.2)]
-    ),
-
-    "J'ai du mal à m'endormir": (
-        "lacher_prise",
-        [("serenite", 0.5)]
-    ),
-
-    "Je me réveille souvent": (
-        "ancrage",
-        [("recuperation", 0.4), ("lacher_prise", 0.3)]
-    )
+    "Plutôt bien": ("serenite", [("equilibre", 0.3)]),
+    "Je me réveille fatigué(e)": ("recuperation", [("ancrage", 0.4), ("serenite", 0.2)]),
+    "J'ai du mal à m'endormir": ("lacher_prise", [("serenite", 0.5)]),
+    "Je me réveille souvent": ("ancrage", [("recuperation", 0.4), ("lacher_prise", 0.3)])
 }
 
 ENERGY_RULES = {
     "Très énergique": ("dynamisme", [("equilibre", 0.3)]),
-
     "Plutôt en forme": ("equilibre", [("dynamisme", 0.3)]),
-
     "Fatigue régulière": ("ancrage", [("recuperation", 0.5)]),
-
     "Très fatigué(e)": ("recuperation", [("ancrage", 0.4)])
 }
 
 DIGESTION_RULES = {
     "Tout va bien": ("equilibre", []),
-
-    "Ballonnements": (
-        "serenite",
-        [("recuperation", 0.3)]
-    ),
-
-    "Digestion lente": (
-        "lacher_prise",
-        [("recuperation", 0.4)]
-    ),
-
-    "Fatigué(e) après le repas": (
-        "recuperation",
-        [("serenite", 0.3)]
-    ),
-
-    "Je ne souhaite pas répondre": ("NO_IMPACT", [])
+    "Ballonnements": ("serenite", [("recuperation", 0.3)]),
+    "Digestion lente": ("lacher_prise", [("recuperation", 0.4)]),
+    "Fatigué(e) après le repas": ("recuperation", [("serenite", 0.3)]),
+    "Je ne souhaite pas répondre": "NO_IMPACT"
 }
 
 SPORT_RULES = {
@@ -108,27 +90,14 @@ SPORT_RULES = {
 
 MENTAL_LOAD_RULES = {
     "Je me sens plutôt léger(e)": ("dynamisme", []),
-
     "Ça reste gérable": ("equilibre", []),
-
-    "Je ressens une certaine surcharge": (
-        "ancrage",
-        [("serenite", 0.5)]
-    ),
-
-    "Je me sens souvent débordé(e)": (
-        "recuperation",
-        [("serenite", 0.6), ("ancrage", 0.3)]
-    ),
-
-    "Je me sens constamment sous pression": (
-        "lacher_prise",
-        [("serenite", 0.7), ("recuperation", 0.4)]
-    )
+    "Je ressens une certaine surcharge": ("ancrage", [("serenite", 0.5)]),
+    "Je me sens souvent débordé(e)": ("recuperation", [("serenite", 0.6), ("ancrage", 0.3)]),
+    "Je me sens constamment sous pression": ("lacher_prise", [("serenite", 0.7), ("recuperation", 0.4)])
 }
 
 # =========================================================
-# ASSOCIATION BESOINS -> THÉRAPIES
+# THÉRAPIES
 # =========================================================
 
 BESOIN_THERAPIES = {
@@ -140,37 +109,11 @@ BESOIN_THERAPIES = {
     "serenite": ["affirmation_positive", "acupression", "qigong"]
 }
 
-# =========================================================
-# DOMAINES THÉRAPEUTIQUES
-# =========================================================
-
 THERAPY_DOMAINS = {
     "repos": ["respiration", "meditation", "autohypnose"],
     "mouvement": ["qigong", "yoga", "renforcement"],
     "emotion": ["acupression", "journaling", "affirmation_positive"]
 }
-
-# =========================================================
-# MODÈLE UTILISATEUR (REQUÊTE API)
-# =========================================================
-
-class UserQuiz(BaseModel):
-    firstname: str
-
-    mood: List[str]
-
-    sleepQuality: str
-
-    energyLevel: str
-
-    digestionQuality: str
-
-    weeklySport: int
-
-    mentalLoad: str
-
-    mainGoal: str = None
-    secondaryGoal: str = None
 
 # =========================================================
 # CALCUL DES BESOINS
@@ -180,74 +123,75 @@ def calculate_needs(user: UserQuiz):
 
     needs_scores = defaultdict(int)
 
-    # ---------------------------
-    # MOOD (liste)
-    # ---------------------------
+    # FIX 5 MOOD SAFE
+    moods = user.mood if isinstance(user.mood, list) else [user.mood]
 
-    for mood_value in user.mood:
-
+    for mood_value in moods:
         if mood_value in MOOD_RULES:
+            main_need, secondary = MOOD_RULES[mood_value]
+            needs_scores[main_need] += QUESTION_SCORES["mood"]
 
-            need = MOOD_RULES[mood_value]
+            for sec_need, weight in secondary:
+                needs_scores[sec_need] += QUESTION_SCORES["mood"] * weight
 
-            needs_scores[need] += QUESTION_SCORES["mood"]
-
-    # ---------------------------
     # SOMMEIL
-    # ---------------------------
-
     if user.sleepQuality in SLEEP_RULES:
+        main_need, secondary = SLEEP_RULES[user.sleepQuality]
+        needs_scores[main_need] += QUESTION_SCORES["sleepQuality"]
 
-        need = SLEEP_RULES[user.sleepQuality]
+        for sec_need, weight in secondary:
+            needs_scores[sec_need] += QUESTION_SCORES["sleepQuality"] * weight
 
-        needs_scores[need] += QUESTION_SCORES["sleepQuality"]
-
-    # ---------------------------
     # ÉNERGIE
-    # ---------------------------
-
     if user.energyLevel in ENERGY_RULES:
+        main_need, secondary = ENERGY_RULES[user.energyLevel]
+        needs_scores[main_need] += QUESTION_SCORES["energyLevel"]
 
-        need = ENERGY_RULES[user.energyLevel]
+        for sec_need, weight in secondary:
+            needs_scores[sec_need] += QUESTION_SCORES["energyLevel"] * weight
 
-        needs_scores[need] += QUESTION_SCORES["energyLevel"]
+    # DIGESTION (FIX 4)
+    rule = DIGESTION_RULES.get(user.digestionQuality)
 
-    # ---------------------------
-    # DIGESTION
-    # ---------------------------
+    if rule and rule != "NO_IMPACT":
+        main_need, secondary = rule
+        needs_scores[main_need] += QUESTION_SCORES["digestionQuality"]
 
-    if user.digestionQuality in DIGESTION_RULES:
+        for sec_need, weight in secondary:
+            needs_scores[sec_need] += QUESTION_SCORES["digestionQuality"] * weight
 
-        need = DIGESTION_RULES[user.digestionQuality]
+# SPORT
 
-        needs_scores[need] += QUESTION_SCORES["digestionQuality"]
+try:
+    sport_value = int(user.weeklySport)
+except:
+    sport_value = 0
 
-    # ---------------------------
-    # SPORT
-    # ---------------------------
+sport_value = min(sport_value, 7)
 
-    sport_value = min(user.weeklySport, 5)
+if sport_value in SPORT_RULES:
 
-    if sport_value in SPORT_RULES:
+    main_need, secondary = SPORT_RULES[sport_value]
 
-        need = SPORT_RULES[sport_value]
+    needs_scores[main_need] += QUESTION_SCORES["weeklySport"]
 
-        needs_scores[need] += QUESTION_SCORES["weeklySport"]
-
-    # ---------------------------
-    # CHARGE MENTALE
-    # ---------------------------
-
+    for sec_need, weight in secondary:
+        needs_scores[sec_need] += (
+            QUESTION_SCORES["weeklySport"] * weight
+        )
+        
+    # MENTAL LOAD
     if user.mentalLoad in MENTAL_LOAD_RULES:
+        main_need, secondary = MENTAL_LOAD_RULES[user.mentalLoad]
+        needs_scores[main_need] += QUESTION_SCORES["mentalLoad"]
 
-        need = MENTAL_LOAD_RULES[user.mentalLoad]
-
-        needs_scores[need] += QUESTION_SCORES["mentalLoad"]
+        for sec_need, weight in secondary:
+            needs_scores[sec_need] += QUESTION_SCORES["mentalLoad"] * weight
 
     return dict(needs_scores)
 
 # =========================================================
-# CALCUL DES THÉRAPIES
+# THERAPIES SCORES
 # =========================================================
 
 def calculate_therapy_scores(needs_scores):
@@ -255,68 +199,27 @@ def calculate_therapy_scores(needs_scores):
     therapy_scores = defaultdict(int)
 
     for need, score in needs_scores.items():
-
-        therapies = BESOIN_THERAPIES.get(need, [])
-
-        for therapy in therapies:
-
+        for therapy in BESOIN_THERAPIES.get(need, []):
             therapy_scores[therapy] += score
 
     return dict(therapy_scores)
 
 # =========================================================
-# SÉLECTION DES THÉRAPIES FINALES
+# SELECTION THÉRAPIES (FIX 7)
 # =========================================================
 
 def select_final_therapies(therapy_scores):
 
-    selected_therapies = []
+    selected = sorted(
+        therapy_scores.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:4]
 
-    # ---------------------------------------
-    # 1. MEILLEURE THÉRAPIE PAR DOMAINE
-    # ---------------------------------------
-
-    for domain, therapies in THERAPY_DOMAINS.items():
-
-        best_therapy = None
-        best_score = -1
-
-        for therapy in therapies:
-
-            score = therapy_scores.get(therapy, 0)
-
-            if score > best_score:
-
-                best_score = score
-                best_therapy = therapy
-
-        if best_therapy:
-
-            selected_therapies.append(best_therapy)
-
-    # ---------------------------------------
-    # 2. 4ÈME THÉRAPIE = MEILLEUR SCORE RESTANT
-    # ---------------------------------------
-
-    remaining_therapies = {
-        therapy: score
-        for therapy, score in therapy_scores.items()
-        if therapy not in selected_therapies
-    }
-
-    if remaining_therapies:
-
-        fourth_therapy = max(
-            remaining_therapies,
-            key=remaining_therapies.get
-        )
-
-        selected_therapies.append(fourth_therapy)
-
-    return selected_therapies
+    return [therapy for therapy, _ in selected]
 
 # =========================================================
-# ANALYSE TEXTE PERSONNALISÉE
+# ANALYSE TEXTE
 # =========================================================
 
 def build_analysis_text(user, top_needs, therapies):
@@ -330,113 +233,50 @@ def build_analysis_text(user, top_needs, therapies):
         "equilibre": "équilibre"
     }
 
-    formatted_needs = [
-        need_labels.get(n, n)
-        for n in top_needs
-    ]
+    formatted_needs = [need_labels.get(n, n) for n in top_needs]
+    formatted_therapies = [t.replace("_", " ").title() for t in therapies]
 
-    formatted_therapies = [
-        therapy.replace("_", " ").title()
-        for therapy in therapies
-    ]
-
-    analysis = (
-        f"{user.firstname}, ton objectif est de "
-        f"{user.mainGoal}. "
-        f"Mais tes réponses montrent surtout "
-        f"un besoin de {', '.join(formatted_needs)}. "
-        f"Nous allons d'abord aider ton corps "
-        f"à retrouver un meilleur équilibre "
+    return (
+        f"{user.firstname}, ton objectif est de {user.mainGoal}. "
+        f"Mais tes réponses montrent surtout un besoin de {', '.join(formatted_needs)}. "
+        f"Nous allons d'abord aider ton corps à retrouver un meilleur équilibre "
         f"avant de chercher à stimuler davantage ton énergie. "
-        f"C'est pourquoi nous te proposons : "
-        f"{', '.join(formatted_therapies)}."
+        f"C'est pourquoi nous te proposons : {', '.join(formatted_therapies)}."
     )
 
-    return analysis
-
 # =========================================================
-# ENDPOINT API
+# ENDPOINT
 # =========================================================
 
 @app.post("/generate-program")
-
 def generate_program(user: UserQuiz):
-
-    print("========= USER RECEIVED =========")
-    print(user)
-    print("=================================")
-
-    # ---------------------------------------
-    # CALCUL DES BESOINS
 
     needs_scores = calculate_needs(user)
 
-    # ---------------------------------------
-    # TRI DES BESOINS
-    # ---------------------------------------
+    sorted_needs = sorted(needs_scores.items(), key=lambda x: x[1], reverse=True)
 
-    sorted_needs = sorted(
-        needs_scores.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    top_needs = [n for n, _ in sorted_needs[:3]]
 
-    top_needs = [
-        need for need, score in sorted_needs[:3]
-    ]
+    therapy_scores = calculate_therapy_scores(needs_scores)
 
-    # ---------------------------------------
-    # CALCUL DES THÉRAPIES
-    # ---------------------------------------
+    final_therapies = select_final_therapies(therapy_scores)
 
-    therapy_scores = calculate_therapy_scores(
-        needs_scores
-    )
-
-    # ---------------------------------------
-    # THÉRAPIES FINALES
-    # ---------------------------------------
-
-    final_therapies = select_final_therapies(
-        therapy_scores
-    )
-
-    # ---------------------------------------
-    # TEXTE PERSONNALISÉ
-    # ---------------------------------------
-
-    analysis_text = build_analysis_text(
-        user,
-        top_needs,
-        final_therapies
-    )
-
-    # ---------------------------------------
-    # RÉPONSE API
-    # ---------------------------------------
+    analysis_text = build_analysis_text(user, top_needs, final_therapies)
 
     return {
-
         "firstname": user.firstname,
-
         "needs_scores": needs_scores,
-
         "top_needs": top_needs,
-
         "therapy_scores": therapy_scores,
-
         "recommended_therapies": final_therapies,
-
         "analysis_text": analysis_text
     }
 
-import os
+# =========================================================
+# RUN
+# =========================================================
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-# =========================================================
-# FIN
-# =========================================================
