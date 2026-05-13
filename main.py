@@ -175,8 +175,11 @@ def build_analysis_text(user, therapies):
 # =========================================================
 
 @app.post("/generate-program")
-
 def generate_program(user: UserQuiz):
+
+    print("=== RAW INPUT FROM FLUTTERFLOW ===")
+    print(user.dict())
+    print("===================================")
 
     # CALCUL BESOINS
     needs_scores = calculate_needs(user)
