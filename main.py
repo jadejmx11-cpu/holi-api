@@ -66,11 +66,12 @@ SPORT_RULES = {
 # =========================================================
 
 BESOIN_THERAPIES = {
-    "serenite": ["meditation", "respiration"],
-    "recuperation": ["yoga", "autohypnose"],
-    "lacher_prise": ["journaling", "respiration"],
-    "equilibre": ["renforcement", "affirmation_positive"],
-    "dynamisme": ["qigong", "respiration"]
+    "serenite": ["meditation", "respiration", "affirmation_postivite"],
+    "recuperation": ["yoga", "autohypnose", "meditation"],
+    "lacher_prise": ["journaling", "respiration", "autohypnose"],
+    "equilibre": ["renforcement", "affirmation_positive", "journaling"],
+    "dynamisme": ["qigong", "respiration", "renforcement"],
+    "ancrage": ["yoga", "meditation", "acupression"]
 }
 
 # =========================================================
