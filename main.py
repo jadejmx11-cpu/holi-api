@@ -30,9 +30,9 @@ class UserQuiz(BaseModel):
 # =========================================================
 
 QUESTION_SCORES = {
-    "mood": 10,
+    "mood": 9,
     "sleep": 10,
-    "sport": 5
+    "sport": 3
 }
 
 # =========================================================
@@ -40,10 +40,11 @@ QUESTION_SCORES = {
 # =========================================================
 
 MOOD_RULES = {
-    "Stressé(e)": "serenite",
-    "Fatigué(e)": "recuperation",
-    "Anxieux(se)": "lacher_prise",
-    "Bien": "equilibre"
+    "1": "serenite",
+    "2": "recuperation",
+    "3": "lacher_prise",
+    "4": "ancrage",
+    "5": "equilibre"
 }
 
 SLEEP_RULES = {
