@@ -21,7 +21,7 @@ app = FastAPI()
 class UserQuiz(BaseModel):
     firstname: str
     mainGoal: str
-    mood: List[str]
+    mood: str
     sleepQuality: str
     weeklySport: int
 
@@ -40,11 +40,11 @@ QUESTION_SCORES = {
 # =========================================================
 
 MOOD_RULES = {
-    "1": "serenite",
-    "2": "recuperation",
-    "3": "lacher_prise",
-    "4": "ancrage",
-    "5": "equilibre"
+    "Stressé(e)": "serenite",
+    "Fatigué(e)": "recuperation",
+    "Anxieux(se)": "lacher_prise",
+    "Surchargé(e)": "ancrage",
+    "Bien": "equilibre"
 }
 
 SLEEP_RULES = {
