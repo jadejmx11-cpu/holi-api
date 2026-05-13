@@ -1,10 +1,9 @@
 # =========================================================
-# HOLI - API SIMPLE ET STABLE
+# HOLI - API SIMPLE ET STABLE (MOOD = STRING)
 # =========================================================
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List
 from collections import defaultdict
 import os
 
@@ -83,16 +82,13 @@ def calculate_needs(user: UserQuiz):
     needs_scores = defaultdict(int)
 
     # -------------------------
-    # MOOD
+    # MOOD (STRING UNIQUE)
     # -------------------------
 
-    for mood in user.mood:
+    if user.mood in MOOD_RULES:
 
-        if mood in MOOD_RULES:
-
-            need = MOOD_RULES[mood]
-
-            needs_scores[need] += QUESTION_SCORES["mood"]
+        need = MOOD_RULES[user.mood]
+        needs_scores[need] += QUESTION_SCORES["mood"]
 
     # -------------------------
     # SOMMEIL
@@ -101,7 +97,6 @@ def calculate_needs(user: UserQuiz):
     if user.sleepQuality in SLEEP_RULES:
 
         need = SLEEP_RULES[user.sleepQuality]
-
         needs_scores[need] += QUESTION_SCORES["sleep"]
 
     # -------------------------
@@ -113,7 +108,6 @@ def calculate_needs(user: UserQuiz):
     if sport_value in SPORT_RULES:
 
         need = SPORT_RULES[sport_value]
-
         needs_scores[need] += QUESTION_SCORES["sport"]
 
     return dict(needs_scores)
@@ -185,32 +179,19 @@ def generate_program(user: UserQuiz):
     needs_scores = calculate_needs(user)
 
     # CALCUL THÉRAPIES
-    therapy_scores = calculate_therapy_scores(
-        needs_scores
-    )
+    therapy_scores = calculate_therapy_scores(needs_scores)
 
     # TOP THÉRAPIES
-    final_therapies = select_final_therapies(
-        therapy_scores
-    )
+    final_therapies = select_final_therapies(therapy_scores)
 
     # TEXTE
-    analysis_text = build_analysis_text(
-        user,
-        final_therapies
-    )
+    analysis_text = build_analysis_text(user, final_therapies)
 
-    # RESPONSE
     return {
-
         "firstname": user.firstname,
-
         "needs_scores": needs_scores,
-
         "therapy_scores": therapy_scores,
-
         "recommended_therapies": final_therapies,
-
         "analysis_text": analysis_text
     }
 
