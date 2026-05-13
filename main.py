@@ -21,6 +21,7 @@ class UserQuiz(BaseModel):
     firstname: str
     mainGoal: str
     mood: str
+    energyLevel: str
     sleepQuality: str
     weeklySport: int
 
@@ -31,7 +32,8 @@ class UserQuiz(BaseModel):
 QUESTION_SCORES = {
     "mood": 9,
     "sleep": 10,
-    "sport": 3
+    "sport": 3,
+    "energy": 4
 }
 
 # =========================================================
@@ -48,8 +50,17 @@ MOOD_RULES = {
 
 SLEEP_RULES = {
     "Très bien": "equilibre",
+    "Plutôt bien": "serenite",
+    "Je me réveille souvent": "ancrage",
     "Je me réveille fatigué(e)": "recuperation",
     "J'ai du mal à m'endormir": "lacher_prise"
+}
+
+ENERGY_RULES = {
+    "Très énergique": "ancrage",
+    "Plutôt en forme": "serenite",
+    "Fatigue régulière": "lacher_prise",
+    "Très fatigué": "recuperation"
 }
 
 SPORT_RULES = {
@@ -66,7 +77,7 @@ SPORT_RULES = {
 # =========================================================
 
 BESOIN_THERAPIES = {
-    "serenite": ["meditation", "respiration", "affirmation_postivite"],
+    "serenite": ["meditation", "respiration", "affirmation_positive"],
     "recuperation": ["yoga", "autohypnose", "meditation"],
     "lacher_prise": ["journaling", "respiration", "autohypnose"],
     "equilibre": ["renforcement", "affirmation_positive", "journaling"],
@@ -99,6 +110,15 @@ def calculate_needs(user: UserQuiz):
 
         need = SLEEP_RULES[user.sleepQuality]
         needs_scores[need] += QUESTION_SCORES["sleep"]
+        
+    # -------------------------
+    # ENERGY
+    # -------------------------
+
+    if user.energyLevel in ENERGY_RULES:
+
+        need = ENERGY_RULES[user.energyLevel]
+        needs_scores[need] += QUESTION_SCORES["energy"]
 
     # -------------------------
     # SPORT
