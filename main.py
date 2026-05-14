@@ -68,7 +68,7 @@ ENERGY_RULES = {
 }
 
 DIGESTION_RULES = {
-    "Très énergique": "ancrage",
+    "Tout va bien": "equilibre",
     "Ballonnements": "lacher_prise",
     "Fatigue après les repas": "serenite",
     "Digestion lente": "recuperation",
@@ -99,26 +99,26 @@ MENTAL_RULES = {
 # =========================================================
 
 BESOIN_THERAPIES = {
-    "serenite": ["meditation", "respiration", "affirmation_positive"],
-    "recuperation": ["yoga", "autohypnose", "meditation"],
-    "lacher_prise": ["journaling", "respiration", "autohypnose"],
-    "equilibre": ["renforcement", "affirmation_positive", "journaling"],
-    "dynamisme": ["qigong", "respiration", "renforcement"],
-    "ancrage": ["yoga", "meditation", "acupression"]
+    "serenite": ["Meditation", "Respiration", "Affirmation Positive"],
+    "recuperation": ["Yoga", "Autohypnose", "Meditation"],
+    "lacher_prise": ["Journaling", "Respiration", "Autohypnose"],
+    "equilibre": ["Renforcement", "Affirmation Positive", "Journaling"],
+    "dynamisme": ["Qi Gong", "Respiration", "Renforcement"],
+    "ancrage": ["Yoga", "Meditation", "Acupression"]
 }
 
 THERAPY_DOMAINS = {
-    "qigong": "mouvement",
-    "yoga": "mouvement",
-    "renforcement": "mouvement",
+    "Qi Gong": "mouvement",
+    "Yoga": "mouvement",
+    "Renforcement": "mouvement",
 
-    "acupression": "emotion",
-    "journaling": "emotion",
-    "affirmation_positive": "emotion",
+    "Acupression": "emotion",
+    "Journaling": "emotion",
+    "Affirmation Positive": "emotion",
 
-    "respiration": "repos",
-    "meditation": "repos",
-    "autohypnose": "repos"
+    "Respiration": "repos",
+    "Meditation": "repos",
+    "Autohypnose": "repos"
 }
 
 # =========================================================
@@ -287,12 +287,12 @@ def select_domain_therapies(therapy_scores):
 # =========================================================
 
 NEED_LABELS = {
-    "serenite": "sérénité",
-    "equilibre": "équilibre",
-    "energie": "énergie",
-    "ancrage": "ancrage",
-    "lacher_prise": "lâcher prise",
-    "confiance": "confiance",
+    "serenite": "de sérénité",
+    "equilibre": "d'équilibre",
+    "energie": "d'énergie",
+    "ancrage": "d'ancrage",
+    "lacher_prise": "de lâcher prise",
+    "confiance": "de confiance",
 }
 
 # =========================================================
