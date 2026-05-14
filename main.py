@@ -2,6 +2,8 @@
 # HOLI - API SIMPLE ET STABLE (MOOD = STRING)
 # =========================================================
 
+import random
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from collections import defaultdict
@@ -383,3 +385,256 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port
     )
+# =========================================================
+# SUITE - GENERATE USER PROGRAM
+# =========================================================
+
+REPEAT_COOLDOWN_DAYS = 3
+
+# =========================================================
+# MODULES (TEST LOCAL - PLUS TARD FIRESTORE)
+# =========================================================
+
+MODULES = [
+
+    {
+        "id": "yoga_sleep_1",
+        "title": "Yoga du sommeil",
+        "therapy": "yoga",
+        "goals": ["mieux_dormir"],
+        "duration": 10,
+        "level": "beginner"
+    },
+  
+    {
+        "id": "yoga_sleep_11",
+        "title": "Yoga 11",
+        "therapy": "yoga",
+        "goals": ["mieux_dormir"],
+        "duration":5,
+        "level": "beginner"
+    },
+
+    {
+        "id": "yoga_sleep_12",
+        "title": "Yoga 12",
+        "therapy": "yoga",
+        "goals": ["mieux_dormir"],
+        "duration": 10,
+        "level": "beginner"
+    },
+
+    {
+        "id": "yoga_stress_1",
+        "title": "Yoga anti-stress",
+        "therapy": "yoga",
+        "goals": ["stress"],
+        "duration": 15,
+        "level": "beginner"
+    },
+
+    {
+        "id": "meditation_sleep_1",
+        "title": "Méditation sommeil profond",
+        "therapy": "meditation",
+        "goals": ["mieux_dormir"],
+        "duration": 10,
+        "level": "beginner"
+    },
+
+    {
+        "id": "meditation_sleep_11",
+        "title": "Méditation 11 profond",
+        "therapy": "meditation",
+        "goals": ["mieux_dormir"],
+        "duration": 5,
+        "level": "beginner"
+    },
+
+    {
+        "id": "respiration_stress_1",
+        "title": "Respiration relaxante",
+        "therapy": "respiration",
+        "goals": ["stress"],
+        "duration": 5,
+        "level": "beginner"
+    },
+
+    {
+        "id": "journaling_stress_1",
+        "title": "Journaling émotionnel",
+        "therapy": "journaling",
+        "goals": ["stress"],
+        "duration": 10,
+        "level": "beginner"
+    },
+
+]
+
+# =========================================================
+# MODEL API
+# =========================================================
+
+class ProgramGenerationRequest(BaseModel):
+    mainGoal: str
+    secondaryGoal: str
+    selectedTherapies: list[str]
+    dailyDuration: int
+    experienceLevel: str
+
+# =========================================================
+# DURÉE PROGRAMME
+# =========================================================
+
+def get_program_duration(daily_duration):
+
+    if daily_duration < 20:
+        weeks = 12
+    elif daily_duration <= 30:
+        weeks = 8
+    elif daily_duration <= 45:
+        weeks = 5
+    else:
+        weeks = 3
+
+    return {
+        "weeks": weeks,
+        "days": weeks * 7
+    }
+
+# =========================================================
+# LEVEL ACCESS
+# =========================================================
+
+LEVEL_ACCESS = {
+    "beginner": ["beginner"],
+    "intermediate": ["beginner", "intermediate"],
+    "advanced": ["beginner", "intermediate", "advanced"]
+}
+
+# =========================================================
+# FILTRE MODULES
+# =========================================================
+
+def filter_modules(user, modules):
+
+    allowed_levels = LEVEL_ACCESS[user["experienceLevel"]]
+    valid_modules = []
+
+    for module in modules:
+
+        if module["therapy"] not in user["selectedTherapies"]:
+            continue
+
+        goals_match = (
+            user["mainGoal"] in module["goals"]
+            or user["secondaryGoal"] in module["goals"]
+        )
+
+        if not goals_match:
+            continue
+
+        if module["level"] not in allowed_levels:
+            continue
+
+        valid_modules.append(module)
+
+    return valid_modules
+
+# =========================================================
+# GENERATION JOUR
+# =========================================================
+
+def generate_day_program(available_modules, daily_duration, recent_modules):
+
+    selected = []
+    total_time = 0
+
+    shuffled = available_modules.copy()
+    random.shuffle(shuffled)
+
+    for module in shuffled:
+
+        if module["id"] in recent_modules:
+            continue
+
+        if total_time + module["duration"] > daily_duration:
+            continue
+
+        selected.append(module)
+        total_time += module["duration"]
+
+        if total_time == daily_duration:
+            break
+
+    return selected
+
+# =========================================================
+# GENERATION PROGRAMME GLOBAL
+# =========================================================
+
+def generate_full_program(user, modules):
+
+    duration = get_program_duration(user["dailyDuration"])
+    valid_modules = filter_modules(user, modules)
+
+    program = []
+    recent_modules = defaultdict(int)
+
+    for day in range(duration["days"]):
+
+        # cooldown
+        to_remove = []
+        for mid in recent_modules:
+            recent_modules[mid] -= 1
+            if recent_modules[mid] <= 0:
+                to_remove.append(mid)
+
+        for mid in to_remove:
+            del recent_modules[mid]
+
+        # génération jour
+        day_modules = generate_day_program(
+            valid_modules,
+            user["dailyDuration"],
+            recent_modules
+        )
+
+        for m in day_modules:
+            recent_modules[m["id"]] = REPEAT_COOLDOWN_DAYS
+
+        program.append({
+            "day": day + 1,
+            "modules": day_modules
+        })
+
+    return program
+
+# =========================================================
+# ENDPOINT API
+# =========================================================
+
+@app.post("/generate-user-program")
+def generate_user_program(user: ProgramGenerationRequest):
+
+    user_dict = user.dict()
+
+    program = generate_full_program(user_dict, MODULES)
+
+    return {
+        "success": True,
+        "days": len(program),
+        "program": program
+    }
+
+# =========================================================
+# RUN
+# =========================================================
+
+if __name__ == "__main__":
+
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 8000))
+
+    uvicorn.run(app, host="0.0.0.0", port=port)
