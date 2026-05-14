@@ -270,6 +270,10 @@ def generate_program(user: UserQuiz):
 
     # CALCUL BESOINS
     needs_scores = calculate_needs(user)
+    
+    # CALCUL TOP BESOINS
+    print("TOP NEEDS:", top_needs)
+    top_needs = select_top_needs(needs_scores)
 
     # CALCUL THÉRAPIES
     therapy_scores = calculate_therapy_scores(needs_scores)
@@ -283,6 +287,7 @@ def generate_program(user: UserQuiz):
     return {
         "firstname": user.firstname,
         "needs_scores": needs_scores,
+        "top_needs": top_needs,
         "therapy_scores": therapy_scores,
         "recommended_therapies": final_therapies,
         "analysis_text": analysis_text
