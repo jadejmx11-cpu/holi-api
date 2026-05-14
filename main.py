@@ -208,6 +208,38 @@ def select_final_therapies(therapy_scores):
     return [therapy for therapy, score in top_therapies]
 
 # =========================================================
+# FORMATAGE BESOINS
+# =========================================================
+
+NEED_LABELS = {
+    "serenite": "sérénité",
+    "equilibre": "équilibre",
+    "energie": "énergie",
+    "ancrage": "ancrage",
+    "lacher_prise": "lâcher prise",
+    "confiance": "confiance",
+}
+
+# =========================================================
+# TOP BESOINS
+# =========================================================
+
+def select_top_needs(needs_scores):
+
+    sorted_needs = sorted(
+        needs_scores.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    top_needs = sorted_needs[:2]
+
+    return [
+        NEED_LABELS.get(need, need.replace("_", " "))
+        for need, score in top_needs
+    ]
+
+# =========================================================
 # TEXTE ANALYSE
 # =========================================================
 
