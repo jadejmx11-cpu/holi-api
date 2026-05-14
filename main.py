@@ -23,7 +23,9 @@ class UserQuiz(BaseModel):
     mood: str
     energyLevel: str
     sleepQuality: str
+    digestionQuality: str
     weeklySport: int
+    mentalLoad: str
 
 # =========================================================
 # SCORES
@@ -32,8 +34,10 @@ class UserQuiz(BaseModel):
 QUESTION_SCORES = {
     "mood": 9,
     "sleep": 10,
+    "energy": 4,
+    "digestion": 6,
     "sport": 3,
-    "energy": 4
+    "mental": 7
 }
 
 # =========================================================
@@ -63,13 +67,31 @@ ENERGY_RULES = {
     "Très fatigué": "recuperation"
 }
 
+DIGESTION_RULES = {
+    "Très énergique": "ancrage",
+    "Ballonnements": "lacher_prise",
+    "Fatigue après les repas": "serenite",
+    "Digestion lente": "recuperation",
+    "Je ne souhaite pas répondre": " "
+}
+
 SPORT_RULES = {
     0: "dynamisme",
     1: "dynamisme",
     2: "equilibre",
     3: "equilibre",
-    4: "recuperation",
-    5: "recuperation"
+    4: "ancrage",
+    5: "ancrage",
+    6: "recuperation",
+    7: "recuperation"
+}
+
+MENTAL_RULES = {
+    "Je me sens plutôt léger(ère)": "equilibre",
+    "Ça reste gérable": "serenite",
+    "Je sens une certaine surcharge": "lacher_prise",
+    "Je me sens souvent débordé(e)": "ancrage",
+    "Je me sens constamment sous pression": "recuperation"
 }
 
 # =========================================================
@@ -121,15 +143,33 @@ def calculate_needs(user: UserQuiz):
         needs_scores[need] += QUESTION_SCORES["energy"]
 
     # -------------------------
+    # DIGESTION
+    # -------------------------
+
+    if user.digestionQuality in DIGESTION_RULES:
+
+        need = DIGESTION_RULES[user.digestionQuality]
+        needs_scores[need] += QUESTION_SCORES["digestion"]
+
+    # -------------------------
     # SPORT
     # -------------------------
 
-    sport_value = min(user.weeklySport, 5)
+    sport_value = min(user.weeklySport, 7)
 
     if sport_value in SPORT_RULES:
 
         need = SPORT_RULES[sport_value]
         needs_scores[need] += QUESTION_SCORES["sport"]
+
+    # -------------------------
+    # MENTAL
+    # -------------------------
+
+    if user.mentalLoad in MENTAL_RULES:
+
+        need = MENTAL_RULES[user.mentalLoad]
+        needs_scores[need] += QUESTION_SCORES["mental"]
 
     return dict(needs_scores)
 
