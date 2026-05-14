@@ -107,6 +107,20 @@ BESOIN_THERAPIES = {
     "ancrage": ["yoga", "meditation", "acupression"]
 }
 
+THERAPY_DOMAINS = {
+    "qigong": "mouvement",
+    "yoga": "mouvement",
+    "renforcement": "mouvement",
+
+    "acupression": "emotion",
+    "journaling": "emotion",
+    "affirmation_positive": "emotion",
+
+    "respiration": "repos",
+    "meditation": "repos",
+    "autohypnose": "repos"
+}
+
 # =========================================================
 # CALCUL DES BESOINS
 # =========================================================
@@ -207,6 +221,67 @@ def select_final_therapies(therapy_scores):
 
     return [therapy for therapy, score in top_therapies]
 
+def select_domain_therapies(therapy_scores):
+    
+    domain_best = {
+        "mouvement": None,
+        "emotion": None,
+        "repos": None
+    }
+
+    domain_scores = {
+        "mouvement": -1,
+        "emotion": -1,
+        "repos": -1
+    }
+
+    # -------------------------
+    # 1. meilleure thérapie par domaine
+    # -------------------------
+    
+    for therapy, score in therapy_scores.items():
+
+        domain = THERAPY_DOMAINS.get(therapy)
+
+        if domain:
+
+            if score > domain_scores[domain]:
+                domain_scores[domain] = score
+                domain_best[domain] = therapy
+
+    # -------------------------
+    # 2. récupérer les thérapies déjà sélectionnées
+    # -------------------------
+
+    selected = set(domain_best.values())
+
+    # -------------------------
+    # 3. thérapie bonus (meilleur score restant)
+    # -------------------------
+
+    remaining = {
+        t: s for t, s in therapy_scores.items()
+        if t not in selected
+    }
+
+    bonus = None
+
+    if remaining:
+        bonus = max(remaining.items(), key=lambda x: x[1])[0]
+
+    # -------------------------
+    # 4. résultat final (ordre structuré)
+    # -------------------------
+
+    final = [
+        domain_best["mouvement"],
+        domain_best["emotion"],
+        domain_best["repos"],
+        bonus
+    ]
+
+    return [t for t in final if t is not None]
+
 # =========================================================
 # FORMATAGE BESOINS
 # =========================================================
@@ -279,7 +354,7 @@ def generate_program(user: UserQuiz):
     therapy_scores = calculate_therapy_scores(needs_scores)
 
     # TOP THÉRAPIES
-    final_therapies = select_final_therapies(therapy_scores)
+    final_therapies = select_domain_therapies(therapy_scores)
 
     # TEXTE
     analysis_text = build_analysis_text(user, final_therapies)
