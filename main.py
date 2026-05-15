@@ -400,8 +400,8 @@ MODULES = [
     {
         "id": "yoga_sleep_1",
         "title": "Yoga du sommeil",
-        "therapy": "yoga",
-        "goals": ["mieux_dormir"],
+        "therapy": "Yoga",
+        "goals": ["Mieux dormir"],
         "duration": 10,
         "level": "beginner"
     },
@@ -409,8 +409,8 @@ MODULES = [
     {
         "id": "yoga_sleep_11",
         "title": "Yoga 11",
-        "therapy": "yoga",
-        "goals": ["mieux_dormir"],
+        "therapy": "Yoga",
+        "goals": ["Mieux dormir"],
         "duration":5,
         "level": "beginner"
     },
@@ -418,8 +418,8 @@ MODULES = [
     {
         "id": "yoga_sleep_12",
         "title": "Yoga 12",
-        "therapy": "yoga",
-        "goals": ["mieux_dormir"],
+        "therapy": "Yoga",
+        "goals": ["Mieux dormir"],
         "duration": 10,
         "level": "beginner"
     },
@@ -427,8 +427,8 @@ MODULES = [
     {
         "id": "yoga_stress_1",
         "title": "Yoga anti-stress",
-        "therapy": "yoga",
-        "goals": ["stress"],
+        "therapy": "Meditation",
+        "goals": ["Apaiser mon stress"],
         "duration": 15,
         "level": "beginner"
     },
@@ -436,8 +436,8 @@ MODULES = [
     {
         "id": "meditation_sleep_1",
         "title": "Méditation sommeil profond",
-        "therapy": "meditation",
-        "goals": ["mieux_dormir"],
+        "therapy": "Respiration",
+        "goals": ["Apaiser mon stress"],
         "duration": 10,
         "level": "beginner"
     },
@@ -445,8 +445,8 @@ MODULES = [
     {
         "id": "meditation_sleep_11",
         "title": "Méditation 11 profond",
-        "therapy": "meditation",
-        "goals": ["mieux_dormir"],
+        "therapy": "Meditation",
+        "goals": ["Mieux dormir"],
         "duration": 5,
         "level": "beginner"
     },
@@ -454,8 +454,8 @@ MODULES = [
     {
         "id": "respiration_stress_1",
         "title": "Respiration relaxante",
-        "therapy": "respiration",
-        "goals": ["stress"],
+        "therapy": "Respiration",
+        "goals": ["Apaiser mon stress"],
         "duration": 5,
         "level": "beginner"
     },
@@ -463,8 +463,8 @@ MODULES = [
     {
         "id": "journaling_stress_1",
         "title": "Journaling émotionnel",
-        "therapy": "journaling",
-        "goals": ["stress"],
+        "therapy": "Journaling",
+        "goals": ["Apaiser mon stress"],
         "duration": 10,
         "level": "beginner"
     },
@@ -616,6 +616,10 @@ def generate_full_program(user, modules):
 
 @app.post("/generate-user-program")
 def generate_user_program(user: ProgramGenerationRequest):
+
+    print("=== RAW INPUT FROM FLUTTERFLOW (API 2) ===")
+    print(user.dict())
+    print("==========================================")
 
     user_dict = user.dict()
 
