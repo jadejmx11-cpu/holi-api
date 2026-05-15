@@ -604,8 +604,8 @@ def generate_full_program(user, modules):
             recent_modules[m["id"]] = REPEAT_COOLDOWN_DAYS
 
         program.append({
-            "day": day + 1,
-            "modules": day_modules
+         "day": day + 1,
+         "modules": [m["id"] for m in day_modules]
         })
 
     return program
